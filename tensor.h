@@ -10,25 +10,25 @@ struct tensor
 class tensor
 {
 public:
-	int idx;
-	int idy;
+	int row;
+	int col;
 	float *data;
 
-	tensor(int idx, int idy);
-	tensor(int idx, int idy, float *d_data);
-	tensor(int idx, int idy, float **h_data);
+	tensor(int row, int col);
+	tensor(int row, int col, float *d_data);
+	tensor(int row, int col, float **h_data);
 	~tensor();
 
     float* Host2Dev();
     float** Dev2Host();
     
-    void add(Tensor2D* tensor);
-    void subtract(Tensor2D* tensor);
+    void add(tensor* t);
+    void subtract(tensor* t);
     void scale(float factor);
-    Tensor2D* multiply(Tensor2D* tensor, Tensor2D* output);
-    Tensor2D* multiplyByTransposition(Tensor2D* tensor, Tensor2D* output);
-    Tensor2D* transposeAndMultiply(Tensor2D* tensor, Tensor2D* output);
-    Tensor1D* avg(Tensor1D* output);
+    tensor* multiply(tensor* t, tensor* output);
+    tensor* multiplyByTransposition(tensor* t, tensor* output);
+    tensor* transposeAndMultiply(tensor* t, tensor* output);
+    tensor* avg(tensor* output);
 
 	
 };
