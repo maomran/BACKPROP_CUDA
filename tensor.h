@@ -22,8 +22,8 @@ public:
     float* Host2Dev();
     float** Dev2Host();
     
-    void add(tensor* t);
-    void subtract(tensor* t);
+    tensor* add(tensor* t);
+    tensor* subtract(tensor* t);
     void scale(float factor);
     tensor* multiply(tensor* t, tensor* output);
     tensor* multiplyByTransposition(tensor* t, tensor* output);
