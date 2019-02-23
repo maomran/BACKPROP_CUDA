@@ -8,21 +8,21 @@
 #include "utils.h"
 
 
-class Dense{
+class FCLayer{
 
 public:
     int inSize;
     int outSize;
 	tensor* w;
-    tensor* b;
-    tensor* w_gradients;
-    tensor* b_gradients;
+    tensor* bias;
+    tensor* w_gradient;
+    tensor* b_gradient;
 
     tensor* inputData;
     tensor* outputForward;
     tensor* outputBackward;
 
-    Dense(int inSize, int outSize);
+    FCLayer(int inSize, int outSize);
 
     tensor* forward(tensor* data);
     tensor* backward(tensor* gradients);
