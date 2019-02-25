@@ -19,15 +19,13 @@ public:
 	tensor(int row, int col, float **h_data);
 	~tensor();
 
-    float* Host2Dev();
+    float* DevData();
     float** Dev2Host();
     
     tensor* add(tensor* t);
     tensor* subtract(tensor* t);
     void scale(float factor);
     tensor* multiply(tensor* t, tensor* output);
-    tensor* multiplyByTransposition(tensor* t, tensor* output);
-    tensor* transposeAndMultiply(tensor* t, tensor* output);
     tensor* avg(tensor* output);
 
 	

@@ -1,31 +1,21 @@
-#ifndef DENSE_H
-#define DENSE_H
+#ifndef LAYER_H
+#define LAYER_H
 
 #include <cstdio>
 #include <cmath>
 
-#include "tensor.cu"
-#include "utils.h"
+#include "tensor.h"
 
-
-class FCLayer{
+class Layer {
 
 public:
-    int inSize;
-    int outSize;
-	tensor* w;
+    tensor* w;
     tensor* bias;
     tensor* w_gradient;
     tensor* b_gradient;
 
-    tensor* inputData;
-    tensor* outputForward;
-    tensor* outputBackward;
-
-    FCLayer(int inSize, int outSize);
-
-    tensor* forward(tensor* data);
-    tensor* backward(tensor* gradients);
+    virtual tensor* forward(tensor* data) = 0;
+    virtual tensor* backward(tensor* gradients) = 0;
 };
 
-#endif  
+#endif  /* LAYER_H */
