@@ -1,4 +1,4 @@
-#include "loss.h"
+#include "funobj.h"
 
 #define VERY_SMALL_NUMBER 1e-10
 

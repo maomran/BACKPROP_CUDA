@@ -1,6 +1,6 @@
 #include <fclayer.h>
 
-FCLaier::FCLaier(int inSize, int outSize){
+FCLayer::FCLayer(int inSize, int outSize){
     this->inSize = inSize;
     this->outSize = outSize;
     float minWeight = -1.0f * sqrt(2/inSize);

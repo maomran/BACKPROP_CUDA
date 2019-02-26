@@ -12,14 +12,14 @@
 #include "utils.h"
 
 
-class SequentialModel {
+class Model {
 public:
     SGD* optimizer;
-    LossFunction* lossFunction;
+    CrossEntropyLoss* funobj;
     std::vector<Layer*> layers;
     tensor* gradients;
 
-    SequentialModel(SGD* optimizer, CrossEntropyLoss* loss);
+    Model(SGD* optimizer, CrossEntropyLoss* funobj);
 
     void addLayer(Layer* layer);
     tensor* forward(tensor* input);

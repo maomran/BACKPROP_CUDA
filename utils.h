@@ -9,8 +9,11 @@
 #define TIDY 32
 #define BIDX 32
 #define BIDY 32
-#define LOG_FILE_NAME       "logs/experiment.csv"
+#define LOG_FILE_NAME       "log.csv"
 #define DEBUG 1
+#define LR       1e-06
+#define DEFAULT_NUMBER_OF_EPOCHS    100
+#define DEFAULT_BATCH_SIZE          512
 
 #if defined(DEBUG) && DEBUG >= 1
  #define VERBOSE_PRINT(fmt, args...) fprintf(stderr, "DEBUG: %s:%d:%s(): " fmt, __FILE__, __LINE__, __func__, ##args)
