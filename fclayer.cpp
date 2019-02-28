@@ -1,4 +1,4 @@
-#include <fclayer.h>
+#include "fclayer.h"
 
 FCLayer::FCLayer(int inSize, int outSize){
     this->inSize = inSize;
@@ -22,7 +22,7 @@ FCLayer::FCLayer(int inSize, int outSize){
 
     this->w = new tensor(outSize, inSize, initialWeigths);
     this->w_gradient = NULL;
-    this->bias = new tensor(outSize, initialBias);
+    this->bias = new tensor(outSize,1, initialBias);
     this->b_geadients = NULL;
     this->outputForward = NULL;
     this->outputBackward = NULL;

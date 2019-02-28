@@ -112,7 +112,7 @@ int main() {
             // Clean data for this batch
             delete images;
             delete labels;
-        }
+        } 
 
         // Calculate mean testing metrics
         testLoss /= numberOfTestBatches;

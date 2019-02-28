@@ -1,4 +1,4 @@
-##ifndef UTILS_H
+#ifndef UTILS_H
 #define UTILS_H
 #include <string>
 #include <cstdlib>
@@ -12,8 +12,8 @@
 #define LOG_FILE_NAME       "log.csv"
 #define DEBUG 1
 #define LR       1e-06
-#define DEFAULT_NUMBER_OF_EPOCHS    100
-#define DEFAULT_BATCH_SIZE          512
+#define EOPCHS    100
+#define BATCHSIZE          512
 
 #if defined(DEBUG) && DEBUG >= 1
  #define VERBOSE_PRINT(fmt, args...) fprintf(stderr, "DEBUG: %s:%d:%s(): " fmt, __FILE__, __LINE__, __func__, ##args)

@@ -3,16 +3,11 @@
 
 #include <cstdio>
 
-struct tensor
-{
-	
-};
-class tensor
-{
+class tensor {
 public:
 	int row;
 	int col;
-	float *data;
+	float *d_data;
 
 	tensor(int row, int col);
 	tensor(int row, int col, float *d_data);
@@ -22,12 +17,12 @@ public:
     float* DevData();
     float** Dev2Host();
     
-    tensor* add(tensor* t);
-    tensor* subtract(tensor* t);
+    tensor* add(tensor* tensor_t, tensor* output);
+    tensor* subtract(tensor* tensor_t, tensor* output);
     void scale(float factor);
     tensor* multiply(tensor* t, tensor* output);
     tensor* avg(tensor* output);
-
+    void toString();
 	
 };
 #endif
