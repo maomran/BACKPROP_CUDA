@@ -23,7 +23,7 @@ FCLayer::FCLayer(int inSize, int outSize){
     this->w = new tensor(outSize, inSize, initialWeigths);
     this->w_gradient = NULL;
     this->bias = new tensor(outSize,1, initialBias);
-    this->b_geadients = NULL;
+    this->b_gradient = NULL;
     this->outputForward = NULL;
     this->outputBackward = NULL;
 }
@@ -52,18 +52,18 @@ tensor* FCLayer::backward(tensor* gradient) {
         this->w_gradient = new tensor(gradient->row, this->inputData->row);
     }
     if (!this->b_gradient) {
-        this->b_gradient = new tensor(gradient->row);
+        this->b_gradient = new tensor(gradient->row,1);
     }
     this->inputData->multiply(gradient, this->w_gradient);
-    gradient->meanX(this->b_gradient);
+    gradient->avg(this->b_gradient);
 
     VERBOSE_PRINT("\n=== Layer %d ===\n", this);
     VERBOSE_PRINT("Input data = X: %d Y: %d\n", this->inputData->row, this->inputData->col);
     VERBOSE_PRINT("Gradients = X: %d Y: %d\n", gradient->row, gradient->col);
     VERBOSE_PRINT("Weights = X: %d Y: %d\n", this->w->row, this->w->col);
-    VERBOSE_PRINT("Delta Weights (%d) = X: %d Y: %d\n", this->w_gradient, this->w_gradient->row, this->w_gradient->col);
+    VERBOSE_PRINT("Delta Weights (%f) = X: %d Y: %d\n", this->w_gradient, this->w_gradient->row, this->w_gradient->col);
     VERBOSE_PRINT("Bias = X: %d\n", this->bias->row);
-    VERBOSE_PRINT("Delta Bias (%d) = X: %d\n", this->b_gradient, this->b_gradient->row);
+    VERBOSE_PRINT("Delta Bias (%f) = X: %d\n", this->b_gradient, this->b_gradient->row);
 
     if (!this->outputBackward) {
         this->outputBackward = new tensor(this->w->col, gradient->col);

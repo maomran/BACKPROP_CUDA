@@ -16,7 +16,7 @@ dataset:
 build: 
 	mkdir -p build
 	# nvcc ${CPU_SOURCE_FILES} ${GPU_SOURCE_FILES} -lineinfo -o build/run
-	nvcc tensor.cu layer.cpp fclayer.cpp relulayer.cpp sgd.cpp funobj.cpp model.cpp csvlogger.cpp mnist.cpp main.cu -lineinfo -0 build/run    
+	nvcc tensor.cu layer.cpp fclayer.cpp relulayer.cu sgd.cpp funobj.cpp model.cpp csvlogger.cpp mnist.cpp main.cu -lineinfo -0 build/run    
 run:
 	./build/run
 

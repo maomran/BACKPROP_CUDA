@@ -1,6 +1,9 @@
 # Directories
 build/
 data/
+
+# Logs
+null
 # Prerequisites
 *.d
 

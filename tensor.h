@@ -17,7 +17,7 @@ public:
     float* DevData();
     float** Dev2Host();
     
-    tensor* add(tensor* tensor_t, tensor* output);
+    void add(tensor* tensor_t);
     tensor* subtract(tensor* tensor_t, tensor* output);
     void scale(float factor);
     tensor* multiply(tensor* t, tensor* output);

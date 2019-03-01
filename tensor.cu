@@ -116,7 +116,7 @@ float** tensor::Dev2Host() {
 }
 
 
-tensor* tensor::add(tensor* tensor_t, tensor* output) {
+void tensor::add(tensor* tensor_t) {
     if (this->row != tensor_t->row || this->col != tensor_t->col) {
         printf("ERROR! Cannot add matrix with size %dx%d to matrix %dx%d.\n",
                tensor_t->row, tensor_t->row, this->row, this->col);
@@ -126,8 +126,7 @@ tensor* tensor::add(tensor* tensor_t, tensor* output) {
     dim3 dimBlock(TIDX, TIDY);
     dim3 dimGrid((this->row + dimBlock.x)/dimBlock.x,
                    (this->col + dimBlock.y)/dimBlock.y);
-    kAdd<<<dimGrid, dimBlock>>>(this->DevData(), tensor_t->DevData(),output->DevData(), this->row, this->col);
-    return output;
+    kAdd<<<dimGrid, dimBlock>>>(this->DevData(), tensor_t->DevData(),this->DevData(), this->row, this->col);
 }
 
 tensor* tensor::subtract(tensor* tensor_t, tensor* output) {
