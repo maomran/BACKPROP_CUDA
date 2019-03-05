@@ -31,7 +31,7 @@ tensor* ReluLayer::forward(tensor* data) {
         this->outputForward = new tensor(data->row, data->col);
     }
 
-    dim3 dimBlock(TIDX, TIDY);
+    dim3 dimBlock(32, 32);
     dim3 dimGrid((data->row + dimBlock.x)/dimBlock.x,
                    (data->col + dimBlock.y)/dimBlock.y);
     kReLu<<<dimGrid, dimBlock>>>(data->DevData(), data->row, data->col,
@@ -40,7 +40,7 @@ tensor* ReluLayer::forward(tensor* data) {
 }
  
 tensor* ReluLayer::backward(tensor* gradients) {
-    dim3 dimBlock(TIDX, TIDY);
+    dim3 dimBlock(32, 32);
     dim3 dimGrid((gradients->row + dimBlock.x)/dimBlock.x,
                    (gradients->col + dimBlock.y)/dimBlock.y);
     kReLu<<<dimGrid, dimBlock>>>(

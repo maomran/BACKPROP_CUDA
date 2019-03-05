@@ -4,16 +4,16 @@
 #include <cstdio>
 #include <cmath>
 
-#include "layer.h"
+#include "fclayer.h"
 #include "tensor.h"
 
 
-class SGD: public {
+class SGD{
 
 public:
     float lr;
     SGD(float lr);
-    void optimize(FCLayer* layer);
+    void optimize(Layer* layer);
 };
 
 #endif  /* !SGD_H */

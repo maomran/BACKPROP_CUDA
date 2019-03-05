@@ -5,14 +5,14 @@
 #include <cstdio>
 
 
-#define TIDX 32
-#define TIDY 32
+#define 32 32
+#define 32 32
 #define BIDX 32
 #define BIDY 32
 #define LOG_FILE_NAME       "log.csv"
 #define DEBUG 1
 #define LR       1e-06
-#define EOPCHS    100
+#define EPOCHS    100
 #define BATCHSIZE          512
 
 #if defined(DEBUG) && DEBUG >= 1

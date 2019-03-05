@@ -1,4 +1,9 @@
 #include "model.h"
+#if defined(DEBUG) && DEBUG >= 1
+ #define VERBOSE_PRINT(fmt, args...) fprintf(stderr, "DEBUG: %s:%d:%s(): " fmt, __FILE__, __LINE__, __func__, ##args)
+#else
+ #define VERBOSE_PRINT(fmt, args...)
+#endif
 
 Model::Model(SGD* optimizer, CrossEntropyLoss* funobj) {
     this->optimizer = optimizer;
@@ -26,7 +31,7 @@ tensor* Model::forward(tensor* input) {
 void Model::backward(tensor* output, tensor* labels) {
     // Compute gradients with funobj function
     if (!this->gradients) {
-        this->gradients = new tensor(output->getSize(X), output->getSize(Y));
+        this->gradients = new tensor(output->row, output->col)  ;
     }
     this->funobj->calculate(output, labels, this->gradients);
     #if defined(DEBUG) && DEBUG >= 2

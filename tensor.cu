@@ -1,5 +1,4 @@
 #include "tensor.h"
-#include "utils.h"
 
 __global__ void kAdd(const float *A, const float *B, float *C, int m, int n)
 {
@@ -123,28 +122,27 @@ void tensor::add(tensor* tensor_t) {
         exit(1);
     }
 
-    dim3 dimBlock(TIDX, TIDY);
+    dim3 dimBlock(32, 32);
     dim3 dimGrid((this->row + dimBlock.x)/dimBlock.x,
                    (this->col + dimBlock.y)/dimBlock.y);
     kAdd<<<dimGrid, dimBlock>>>(this->DevData(), tensor_t->DevData(),this->DevData(), this->row, this->col);
 }
 
-tensor* tensor::subtract(tensor* tensor_t, tensor* output) {
+void tensor::subtract(tensor* tensor_t) {
     if (this->row != tensor_t->row || this->col != tensor_t->col) {
         printf("ERROR! Cannot sub matrix with size %dx%d to matrix %dx%d.\n",
                tensor_t->row, tensor_t->row, this->row, this->col);
         exit(1);
     }
-    dim3 dimBlock(TIDX, TIDY);
+    dim3 dimBlock(32, 32);
     dim3 dimGrid((this->row + dimBlock.x)/dimBlock.x,
                    (this->col + dimBlock.y)/dimBlock.y);
-    kSub<<<dimGrid, dimBlock>>>(this->DevData(), tensor_t->DevData(),output->DevData(), this->row, this->col);
-    return output;
+    kSub<<<dimGrid, dimBlock>>>(this->DevData(), tensor_t->DevData(),this->DevData(), this->row, this->col);
 }
 
 
 void tensor::scale(float factor) {
-    dim3 dimBlock(TIDX, TIDY);
+    dim3 dimBlock(32, 32);
     dim3 dimGrid((this->row + dimBlock.x)/dimBlock.x,
                    (this->col + dimBlock.y)/dimBlock.y);
     kScale<<<dimGrid, dimBlock>>>(this->DevData(), factor, this->row, this->col);
@@ -158,7 +156,7 @@ tensor* tensor::multiply(tensor* tensor_t, tensor* output) {
         exit(1);
     }
 
-    dim3 dimBlock(TIDX, TIDY);
+    dim3 dimBlock(32, 32);
     dim3 dimGrid((this->row + dimBlock.x)/dimBlock.x,
                    (this->col + dimBlock.y)/dimBlock.y);
  
@@ -172,7 +170,7 @@ tensor* tensor::multiply(tensor* tensor_t, tensor* output) {
 
 
 tensor* tensor::avg(tensor* output) {
-    int dimBlock = TIDX;
+    int dimBlock = 32;
     int dimGrid = (this->row + dimBlock)/dimBlock;
     kAvg<<<dimGrid, dimBlock>>>(this->DevData(), output->DevData(), this->row, this->col);
     return output;
@@ -186,5 +184,6 @@ void tensor::toString() {
         }
         printf("\n");
     }
+    delete[] values;
 }
 

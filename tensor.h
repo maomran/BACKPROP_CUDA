@@ -2,6 +2,7 @@
 #define TENSOR_H
 
 #include <cstdio>
+// #include "utils.h"
 
 class tensor {
 public:
@@ -18,7 +19,7 @@ public:
     float** Dev2Host();
     
     void add(tensor* tensor_t);
-    tensor* subtract(tensor* tensor_t, tensor* output);
+    void subtract(tensor* tensor_t);
     void scale(float factor);
     tensor* multiply(tensor* t, tensor* output);
     tensor* avg(tensor* output);

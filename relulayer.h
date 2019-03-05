@@ -4,7 +4,7 @@
 #include <cstdio>
 #include <cmath>
 #include "tensor.h"
-#include "utils.h"
+// #include "utils.h"
 #include "layer.h"
 
 class ReluLayer: public Layer{

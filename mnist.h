@@ -7,7 +7,7 @@
 #include <cmath>
 
 #include "tensor.h"
-#include "../utils.h"
+// #include "utils.h"
 
 class MNISTDataSet {
 
@@ -16,7 +16,7 @@ public:
     float** labels;
     int size;
     // TRUE for Training, False for Test
-    MNISTDataSet(bool OP = TRUE );
+    MNISTDataSet(bool OP = true );
     
     int getSize();
     void shuffle();

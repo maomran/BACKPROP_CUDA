@@ -1,15 +1,13 @@
-#ifndef SEQUENTIAL_MODEL_H
-#define SEQUENTIAL_MODEL_H
+#ifndef MODEL_H
+#define MODEL_H
 
-#include <cstdio>
-#include <cmath>
 #include <vector>
 
 #include "layer.h"
-#include "loss.h"
+#include "funobj.h"
 #include "sgd.h"
 #include "tensor.h"
-#include "utils.h"
+// #include "utils.h"
 
 
 class Model {
@@ -26,4 +24,4 @@ public:
     void backward(tensor* output, tensor* layers);
 };
 
-#endif  /* SEQUENTIAL_MODEL_H */
+#endif  /* MODEL_H */

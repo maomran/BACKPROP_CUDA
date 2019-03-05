@@ -1,17 +1,27 @@
 #include "fclayer.h"
+#include <cstdlib>
+#include <cstdio>
+#if defined(DEBUG) && DEBUG >= 1
+ #define VERBOSE_PRINT(fmt, args...) fprintf(stderr, "DEBUG: %s:%d:%s(): " fmt, __FILE__, __LINE__, __func__, ##args)
+#else
+ #define VERBOSE_PRINT(fmt, args...)
+#endif
+float randomFloat(float a, float b) {
+    return a + static_cast <float> (std::rand()) /( static_cast <float> (RAND_MAX/(b-a)));
+}
 
 FCLayer::FCLayer(int inSize, int outSize){
     this->inSize = inSize;
     this->outSize = outSize;
     float minWeight = -1.0f * sqrt(2/inSize);
     float majWeight = 1.0f * sqrt(2/inSize);
-    float** initialWeigths = new float*[outSize];
-    *initialWeigths = new float[inSize * outSize];
+    float* initialWeigths = new float[inSize * outSize];
+    // *initialWeigths = new float[inSize * outSize];
 
-    for (int i = 0; i < outSize; i++) {
-        for (int j = 0; j < inSize; j++) {
-            initialWeigths[i][j] = randomFloat(minWeight, majWeight);
-        }
+    for (int i = 0; i < outSize*inSize; i++) {
+        // for (int j = 0; j < inSize; j++) {
+            initialWeigths[i] = randomFloat(minWeight, majWeight);
+        // }
     }
     float* initialBias = new float[outSize];
     
@@ -26,6 +36,11 @@ FCLayer::FCLayer(int inSize, int outSize){
     this->b_gradient = NULL;
     this->outputForward = NULL;
     this->outputBackward = NULL;
+
+
+    delete[] initialWeigths;
+    delete[] initialBias;
+
 }
 // TODO: Forward doesn't seem  good
 tensor* FCLayer::forward(tensor* data) {

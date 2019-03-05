@@ -5,15 +5,19 @@
 
 #define NUMBER_OF_PROBE_IMAGES 1000
 
+int randomInt(int a, int b) {
+    return a + std::rand()%(b-a);
+}
+
 MNISTDataSet::MNISTDataSet(bool OP) {
     // Prepare some placeholders for our dataset
     FILE *file;
     long length;
 
     // Open file with images and check how long it is
-    if (OP == TRUE) {
+    if (OP == true) {
         file = fopen("data/train-images", "rb");
-    } else if (OP == FALSE) {
+    } else if (OP == false) {
         file = fopen("data/test-images", "rb");
     }
     fseek(file, 0, SEEK_END);
@@ -26,9 +30,9 @@ MNISTDataSet::MNISTDataSet(bool OP) {
     fclose(file);
 
     // Open file with labels and check how long it is
-    if (OP == TRUE) {
+    if (OP == true) {
         file = fopen("data/train-labels", "rb");
-    } else if (OP == FALSE) {
+    } else if (OP == false) {
         file = fopen("data/test-labels", "rb");
     }
     fseek(file, 0, SEEK_END);

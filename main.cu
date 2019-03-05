@@ -3,14 +3,20 @@
 #include <ctime>
 
 #include "fclayer.h"
-#include "relylayer.h"
+#include "relulayer.h"
 #include "sgd.h"
 #include "funobj.h"
 #include "model.h"
 #include "mnist.h"
-#include "csv_logger.h"
-#include "utils.h"
-
+#include "csvlogger.h"
+// #include "utils.h"
+#define TRAIN true
+#define TEST false
+#define LOG_FILE_NAME       "log.csv"
+#define DEBUG 2
+#define LR       1e-06
+#define EPOCHS    100
+#define BATCHSIZE          100
 
 int main() {
     // Always initialize seed to some random value
@@ -37,9 +43,9 @@ int main() {
 
     // Prepare model
     Model* model = new Model(optimizer, loss);
-    model->addLayer(new DenseLayer(28*28, 100));
+    model->addLayer(new FCLayer(28*28, 100));
     model->addLayer(new ReluLayer(100));
-    model->addLayer(new DenseLayer(100, 10));
+    model->addLayer(new FCLayer(100, 10));
 
     // Prepare logger that will help us gather timings from experiments
     CSVLogger* logger = new CSVLogger(LOG_FILE_NAME);
@@ -55,12 +61,12 @@ int main() {
         printf("Epoch %d:\n", e);
         for (int batch = 0; batch < numberOfTrainBatches; batch++) {
             // Fetch batch from dataset
-            Tensor2D* images = trainDataset->getBatchOfImages(batch, batchSize);
-            Tensor2D* labels = trainDataset->getBatchOfLabels(batch, batchSize);
+            tensor* images = trainDataset->getBatchOfImages(batch, batchSize);
+            tensor* labels = trainDataset->getBatchOfLabels(batch, batchSize);
 
             // Forward pass
             cudaEventRecord(start, 0);
-            Tensor2D* output = model->forward(images);
+            tensor* output = model->forward(images);
             cudaEventRecord(end, 0);
             cudaEventSynchronize(end);
 
@@ -99,11 +105,11 @@ int main() {
         float testLoss = 0.0, testAccuracy = 0.0;
         for (int batch = 0; batch < numberOfTestBatches; batch++) {
             // Fetch batch from dataset
-            Tensor2D* images = testDataset->getBatchOfImages(batch, batchSize);
-            Tensor2D* labels = testDataset->getBatchOfLabels(batch, batchSize);
+            tensor* images = testDataset->getBatchOfImages(batch, batchSize);
+            tensor* labels = testDataset->getBatchOfLabels(batch, batchSize);
 
             // Forward pass
-            Tensor2D* output = model->forward(images);
+            tensor* output = model->forward(images);
 
             // Print error
             testLoss += loss->getLoss(output, labels);
