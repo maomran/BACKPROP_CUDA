@@ -1,1 +1,0 @@
-nvcc -G -g tensor.cu fclayer.cpp relulayer.cu sgd.cpp funobj.cu model.cpp csvlogger.cpp mnist.cpp main.cu -lineinfo -o build/run
