@@ -1,7 +1,3 @@
-
-CPU_SOURCE_FILES := $(shell find $(SOURCEDIR) -name '*.cpp')
-GPU_SOURCE_FILES := $(shell find $(SOURCEDIR) -name '*.cu')
-
 dataset:
 	mkdir -p data
 	curl -o data/train-images.gz http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz 
@@ -13,16 +9,17 @@ dataset:
 	gunzip data/test-images.gz
 	gunzip data/test-labels.gz
 
-build: 
+task1: 
+	echo "Running with Shared Memory"
 	mkdir -p build
-	# nvcc ${CPU_SOURCE_FILES} ${GPU_SOURCE_FILES} -lineinfo -o build/run
-	nvcc tensor.cu layer.cpp fclayer.cpp relulayer.cu sgd.cpp funobj.cpp model.cpp csvlogger.cpp mnist.cpp main.cu -lineinfo -0 build/run    
-run:
+	nvcc -G -g -std=c++11 tensor.cu fclayer.cu sigmoidlayer.cu sgd.cpp funobj.cu model.cu mnist.cpp main.cu -o build/run   
 	./build/run
 
-# run_experiments:
-# 	mkdir -p ${LOGS_DIR}
-# 	python3 run_experiments.py
+task2:
+	echo "Running without Shared Memory"
+	mkdir -p build
+	nvcc -G -g -std=c++11 tensorshared.cu fclayer.cu sigmoidlayer.cu sgd.cpp funobj.cu model.cu mnist.cpp main.cu -o build/run   
+	./build/run
 
 clean:
 	rm -rf build

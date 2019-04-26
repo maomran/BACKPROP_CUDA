@@ -1,71 +1,16 @@
 #include "tensor.h"
-
-__global__ void kAdd(const float *A, const float *B, float *C, int m, int n)
-{
-    int row = blockDim.x * blockIdx.x + threadIdx.x;
-    int col = blockIdx.y * blockDim.y + threadIdx.y;
-    if (row < m && col < n)
-    {
-        C[row*m + col] = A[row*m + col] + B[row*m + col];
-    }
-}
-
-__global__ void kSub(const float *A, const float *B, float *C, int m, int n)
-{
-    int row = blockDim.x * blockIdx.x + threadIdx.x;
-    int col = blockIdx.y * blockDim.y + threadIdx.y;
-    if (row < m && col < n)
-    {
-        C[row*m + col] = A[row*m + col] - B[row*m + col];
-    }
-}
-
-
-__global__ void kScale(float *A, float scale, int m, int n) {
-    int row = blockIdx.x * blockDim.x + threadIdx.x;
-    int col = blockIdx.y * blockDim.y + threadIdx.y;
-    if (row < m && col < n){
-        A[col*m + row] *= scale;
-    }
-}
-
-__global__
-void kMul(float *A, float *B, float *C, int m, int n, int k){
-    int row = blockIdx.y * blockDim.y + threadIdx.y; 
-    int col = blockIdx.x * blockDim.x + threadIdx.x;
-    int i;
-    float sum = 0;
-    if( col < k && row < m) 
-    {
-        for( i = 0; i < n; i++) 
-        {
-            sum += A[row * n + i] * B[i * k + col];
-        }
-        C[row * k + col] = sum;
-    }
-
-}
-
-__global__
-void kAvg(float* A,float* B, int m, int n)
-{
-    int col = blockIdx.x * blockDim.x + threadIdx.x;
-    if (col < m) {
-        float sum = 0.0;
-        for (int i = 0; i < n; i++) {
-            sum += A[i*m + col];
-        }
-        B[col] = sum / n;
-    }
-}
+#include "kernels.h"
+#include <iostream>
+#include <cstdlib>
+cudaError_t err = cudaSuccess;
 
 tensor::tensor(int row, int col) {
     this->row = row;
     this->col = col;
-    if (this->row && this->col) {
-        cudaMalloc((void **)&(this->d_data), this->row*this->col*sizeof(float));
-    } else {
-        this->d_data = NULL;
+    err = cudaMalloc((void **)&(this->d_data), this->row*this->col*sizeof(float));
+    if (err != cudaSuccess){
+        fprintf(stderr, "Failed to allocate device vector at line 131(error code %s)!\n", cudaGetErrorString(err));
+        exit(EXIT_FAILURE);
     }
 }
 
@@ -73,36 +18,37 @@ tensor::tensor(int row, int col, float** h_data) {
     this->row = row;
     this->col = col;
     if (this->row && this->col) {
-        cudaMalloc((void **)&(this->d_data), this->row*this->col*sizeof(float));
-        cudaMemcpy(this->d_data, *h_data, 
+        err = cudaMalloc((void **)&(this->d_data), this->row*this->col*sizeof(float));
+        if (err != cudaSuccess)
+            {
+                fprintf(stderr, "Failed to allocate device vector A at line 149(error code %s)!\n", cudaGetErrorString(err));
+                exit(EXIT_FAILURE);
+            }
+
+        err = cudaMemcpy(this->d_data, *h_data, 
             this->row*this->col*sizeof(float), cudaMemcpyHostToDevice);
+        if (err != cudaSuccess)
+        {
+            fprintf(stderr, "Failed to copy vector A from host to device at line 329(error code %s)!\n", cudaGetErrorString(err));
+            exit(EXIT_FAILURE);
+        }
+
     } 
     else {
         this->d_data = NULL;
     }
 }
 
-tensor::tensor(int row, int col, float* d_data) {
+tensor::tensor(int row, int col, float* h_data) {
     this->row = row;
     this->col = col;
-    this->d_data = d_data;
+        cudaMalloc((void **)&(this->d_data), this->row*sizeof(float));
+        cudaMemcpy(this->d_data, h_data, this->row*sizeof(float), cudaMemcpyHostToDevice);
 }
 
-tensor::~tensor() {
+tensor::~tensor(){
     cudaFree(this->d_data);
-}
 
-// int tensor::getSize(tensorAxis axis) {
-//     if (axis == X) {
-//         return this->row;
-//     } else if (axis == Y) {
-//         return this->col;
-//     }
-//     return -1;
-// }
-
-float* tensor::DevData() {
-    return this->d_data;
 }
 
 float** tensor::Dev2Host() {
@@ -110,69 +56,163 @@ float** tensor::Dev2Host() {
     *h_data = new float[this->col * this->row];
     for (int i = 1; i < this->col; i++) 
         h_data[i] = h_data[i-1] + this->row;
-    cudaMemcpy(*h_data, this->d_data, this->row*this->col*sizeof(float), cudaMemcpyDeviceToHost);
+    err = cudaMemcpy(*h_data, this->d_data, this->row*this->col*sizeof(float), cudaMemcpyDeviceToHost);
+    if (err != cudaSuccess)
+    {
+        fprintf(stderr, "Failed to copy vector C from device to host at line 121(error code %s)!\n", cudaGetErrorString(err));
+        exit(EXIT_FAILURE);
+    }
     return h_data;
 }
 
 
-void tensor::add(tensor* tensor_t) {
-    if (this->row != tensor_t->row || this->col != tensor_t->col) {
-        printf("ERROR! Cannot add matrix with size %dx%d to matrix %dx%d.\n",
-               tensor_t->row, tensor_t->row, this->row, this->col);
+void tensor::Add(tensor* input) {
+    if (this->row != input->row ) {
+        printf("ERROR! Cannot Add matrix with size %dx%d to matrix %dx%d.\n",
+               input->row, input->row, this->row, this->col);
         exit(1);
     }
 
-    dim3 dimBlock(32, 32);
-    dim3 dimGrid((this->row + dimBlock.x)/dimBlock.x,
-                   (this->col + dimBlock.y)/dimBlock.y);
-    kAdd<<<dimGrid, dimBlock>>>(this->DevData(), tensor_t->DevData(),this->DevData(), this->row, this->col);
+    dim3 dimBlock(32,1);
+    dim3 dimGrid((this->row + dimBlock.x)/dimBlock.x,1);
+    kAdd<<<dimGrid, dimBlock>>>(this->d_data, input->d_data, this->row, this->col);
+    err = cudaGetLastError();
+    if (err != cudaSuccess){
+        fprintf(stderr, "Failed to launch Add kernel (error code %s)!\n", cudaGetErrorString(err));
+        exit(EXIT_FAILURE);
+    }
+
 }
 
-void tensor::subtract(tensor* tensor_t) {
-    if (this->row != tensor_t->row || this->col != tensor_t->col) {
+void tensor::Subtract(tensor* input) {
+    if (this->row != input->row && this->col != input->col ) {
         printf("ERROR! Cannot sub matrix with size %dx%d to matrix %dx%d.\n",
-               tensor_t->row, tensor_t->row, this->row, this->col);
+               input->row, input->row, this->row, this->col);
+        exit(1);
+    }
+    dim3 dimBlock(32,32);
+    dim3 dimGrid((this->row + dimBlock.x)/dimBlock.x,(this->col + dimBlock.y)/dimBlock.y);
+    kSub<<<dimGrid, dimBlock>>>(this->d_data, input->d_data, this->row, this->col);
+    err = cudaGetLastError();
+    if (err != cudaSuccess){
+        fprintf(stderr, "Failed to launch sub kernel (error code %s)!\n", cudaGetErrorString(err));
+        exit(EXIT_FAILURE);
+    }
+
+}
+
+
+void tensor::Scale(float factor) {
+    dim3 dimBlock(32, 32);
+    dim3 dimGrid((this->row + dimBlock.x)/dimBlock.x,
+                   (this->col + dimBlock.y)/dimBlock.y);
+    kScale<<<dimGrid, dimBlock>>>(this->d_data, factor, this->row, this->col);
+    err = cudaGetLastError();
+    if (err != cudaSuccess){
+        fprintf(stderr, "Failed to launch Scale kernel (error code %s)!\n", cudaGetErrorString(err));
+        exit(EXIT_FAILURE);
+    }
+}
+
+
+tensor* tensor::MatMul(tensor* input, tensor* output) {
+    if (this->col != input->row) {
+        printf("ERROR! Cannot MatMul matrices with shape %dx%d and %dx%d.\n",
+               this->row, this->col, input->row, input->col);
         exit(1);
     }
     dim3 dimBlock(32, 32);
     dim3 dimGrid((this->row + dimBlock.x)/dimBlock.x,
                    (this->col + dimBlock.y)/dimBlock.y);
-    kSub<<<dimGrid, dimBlock>>>(this->DevData(), tensor_t->DevData(),this->DevData(), this->row, this->col);
-}
-
-
-void tensor::scale(float factor) {
-    dim3 dimBlock(32, 32);
-    dim3 dimGrid((this->row + dimBlock.x)/dimBlock.x,
-                   (this->col + dimBlock.y)/dimBlock.y);
-    kScale<<<dimGrid, dimBlock>>>(this->DevData(), factor, this->row, this->col);
-}
-
-
-tensor* tensor::multiply(tensor* tensor_t, tensor* output) {
-    if (this->row != tensor_t->col) {
-        printf("ERROR! Cannot multiply matrices with shape %dx%d and %dx%d.\n",
-               this->row, this->col, tensor_t->row, tensor_t->col);
-        exit(1);
-    }
-
-    dim3 dimBlock(32, 32);
-    dim3 dimGrid((this->row + dimBlock.x)/dimBlock.x,
-                   (this->col + dimBlock.y)/dimBlock.y);
- 
-        // Defer calculations on GPU
         kMul<<<dimGrid, dimBlock>>>(
-            this->DevData(), tensor_t->DevData(),output->DevData(),
-            this->row, this->col, tensor_t->col
+            this->d_data, input->d_data,output->d_data,
+            this->row, this->col, input->col
         );
+    err = cudaGetLastError();
+        if (err != cudaSuccess){
+            fprintf(stderr, "Failed to launch MatMul kernel (error code %s)!\n", cudaGetErrorString(err));
+            exit(EXIT_FAILURE);
+        }
+
+
     return output;
 }
 
+tensor* tensor::GradientMul(tensor* input, tensor* output) {
+    if (this->col != input->col) {
+        printf("ERROR! Cannot MatMul matrices with shape %dx%d and %dx%d.\n",
+               this->row, this->col, input->row, input->col);
+        exit(1);
+    }
+    int threadsX = 32;
+    int threadsY = 32;
 
-tensor* tensor::avg(tensor* output) {
+    int blocksX =  (input->row + threadsX) / threadsX;
+    int blocksY =  (this->row + threadsY) / threadsY;
+    int fieldsPerBlockX =  (input->row + blocksX) / blocksX;
+    int fieldsPerThreadX =  (fieldsPerBlockX + threadsX) / threadsX;
+    int fieldsPerBlockY =  (this->row + blocksY) / blocksY;
+    int fieldsPerThreadY =  (fieldsPerBlockY + threadsY) / threadsY;
+        dim3 dimBlock(32, 32);
+        dim3 dimGrid(blocksX, blocksY);
+
+        kGradMul<<<dimGrid, dimBlock>>>(
+            fieldsPerBlockX, fieldsPerBlockY, fieldsPerThreadX, fieldsPerThreadY,
+            this->d_data, this->row, this->col,
+            input->d_data, input->row, input->col,
+            output->d_data);
+    err = cudaGetLastError();
+    if (err != cudaSuccess){
+        fprintf(stderr, "Failed to launch GradientMul kernel (error code %s)!\n", cudaGetErrorString(err));
+        exit(EXIT_FAILURE);
+
+    }
+
+    return output;
+}
+tensor* tensor::BackwardMul(tensor* input, tensor* output) {
+    if (this->row != input->row) {
+        printf("ERROR! Cannot MatMul matrices with shape %dx%d and %dx%d.\n",
+               this->row, this->col, input->row, input->col);
+        exit(1);
+    }
+ 
+        int threadsX = 32;
+        int threadsY = 32;
+        int blocksX =  (input->col + threadsX) / threadsX;
+        int blocksY =  (this->col + threadsY) / threadsY;
+        int fieldsPerBlockX =  (input->col + blocksX) / blocksX;
+        int fieldsPerThreadX =  (fieldsPerBlockX + threadsX) / threadsX;
+        int fieldsPerBlockY =  (this->col + blocksY) / blocksY;
+        int fieldsPerThreadY =  (fieldsPerBlockY + threadsY) / threadsY;
+        dim3 dimBlock(threadsX, threadsY);
+        dim3 dimGrid(blocksX, blocksY);
+        kBackMul<<<dimGrid, dimBlock>>>(
+            fieldsPerBlockX, fieldsPerBlockY, fieldsPerThreadX, fieldsPerThreadY,
+            this->d_data, this->row, this->col,
+            input->d_data, input->row, input->col,
+            output->d_data);
+    err = cudaGetLastError();
+
+    if (err != cudaSuccess)
+    {
+        fprintf(stderr, "Failed to launch BackwardMul kernel (error code %s)!\n", cudaGetErrorString(err));
+        exit(EXIT_FAILURE);
+    }
+
+    return output;
+}
+
+tensor* tensor::GradAvg(tensor* output) {
     int dimBlock = 32;
     int dimGrid = (this->row + dimBlock)/dimBlock;
-    kAvg<<<dimGrid, dimBlock>>>(this->DevData(), output->DevData(), this->row, this->col);
+    kAvg<<<dimGrid, dimBlock>>>(this->d_data, output->d_data, this->row, this->col);
+    err = cudaGetLastError();
+    if (err != cudaSuccess)
+    {
+        fprintf(stderr, "Failed to launch GradAvg kernel (error code %s)!\n", cudaGetErrorString(err));
+        exit(EXIT_FAILURE);
+    }
     return output;
 }
 
@@ -180,7 +220,7 @@ void tensor::toString() {
     float** values = this->Dev2Host();
     for (int y = 0; y < this->col; y++) {
         for (int x = 0; x < this->row; x++) {
-            printf("%8.5f; ", values[y][x]);
+            printf("%f; ", values[y][x]);
         }
         printf("\n");
     }

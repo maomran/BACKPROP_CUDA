@@ -1,7 +1,7 @@
 #include "mnist.h"
-
 #define BEGIN_OF_PIXELS 16
 #define BEGIN_OF_LABELS 8
+#define DEBUG 2
 
 #define NUMBER_OF_PROBE_IMAGES 1000
 

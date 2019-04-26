@@ -7,7 +7,6 @@
 #include <cmath>
 
 #include "tensor.h"
-// #include "utils.h"
 
 class MNISTDataSet {
 

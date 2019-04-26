@@ -3,24 +3,13 @@
 #include <ctime>
 
 #include "fclayer.h"
-#include "relulayer.h"
+#include "sigmoidlayer.h"
 #include "sgd.h"
 #include "funobj.h"
 #include "model.h"
 #include "mnist.h"
-#include "csvlogger.h"
-// #include "utils.h"
-#define TRAIN true
-#define TEST false
-#define LOG_FILE_NAME       "log.csv"
-#define DEBUG 2
-#define LR       1e-06
-#define EPOCHS    100
-#define BATCHSIZE          100
 
 int main() {
-    // Always initialize seed to some random value
-    srand(static_cast<unsigned>(time(0)));
 
     // Prepare events for measuring time on CUDA
     float elapsedTime = 0.0;
@@ -28,37 +17,29 @@ int main() {
     cudaEventCreate(&start);
     cudaEventCreate(&end);
 
-    // Print our current configuration for this training
-    // Configuration::printCurrentConfiguration();
-    // Configuration::printCUDAConfiguration();
-
     // Read both training and test dataset
-    MNISTDataSet* trainDataset = new MNISTDataSet(TRAIN);
-    MNISTDataSet* testDataset = new MNISTDataSet(TEST);
+    MNISTDataSet* trainDataset = new MNISTDataSet(true);
+    MNISTDataSet* testDataset = new MNISTDataSet(false);
 
     // Prepare optimizer and loss function
-    float learningRate = LR;
+    float learningRate = 1e-03;
     SGD* optimizer = new SGD(learningRate);
-    CrossEntropyLoss* loss = new CrossEntropyLoss();
+    LossFunction* loss = new LossFunction();
 
     // Prepare model
     Model* model = new Model(optimizer, loss);
     model->addLayer(new FCLayer(28*28, 100));
-    model->addLayer(new ReluLayer(100));
+    model->addLayer(new SigmoidLayer(100));
     model->addLayer(new FCLayer(100, 10));
 
-    // Prepare logger that will help us gather timings from experiments
-    CSVLogger* logger = new CSVLogger(LOG_FILE_NAME);
 
-    // Run some epochs
-    int epochs = EPOCHS;
-    int batchSize = BATCHSIZE;
+    int epochs = 100;
+    int batchSize = 100;
     int numberOfTrainBatches = trainDataset->getSize() / batchSize;
     int numberOfTestBatches = testDataset->getSize() / batchSize;
+    float  trainingTime = 0.0;
     for (int e = 0; e < epochs; e++) {
-        float trainingLoss = 0.0, trainingAccuracy = 0.0;
-        double trainingForwardTime = 0.0, trainingBackwardTime = 0.0;
-        printf("Epoch %d:\n", e);
+        float trainingAccuracy = 0.0;
         for (int batch = 0; batch < numberOfTrainBatches; batch++) {
             // Fetch batch from dataset
             tensor* images = trainDataset->getBatchOfImages(batch, batchSize);
@@ -67,24 +48,14 @@ int main() {
             // Forward pass
             cudaEventRecord(start, 0);
             tensor* output = model->forward(images);
-            cudaEventRecord(end, 0);
-            cudaEventSynchronize(end);
-
-            // Save statistics
-            trainingLoss += loss->getLoss(output, labels);
-            trainingAccuracy += loss->getAccuracy(output, labels);
-            cudaEventElapsedTime(&elapsedTime, start, end);
-            trainingForwardTime += elapsedTime;
-
-            // Backward pass
-            cudaEventRecord(start, 0);
             model->backward(output, labels);
             cudaEventRecord(end, 0);
             cudaEventSynchronize(end);
-
-            // Save statistics
             cudaEventElapsedTime(&elapsedTime, start, end);
-            trainingBackwardTime += elapsedTime;
+            trainingTime += elapsedTime;
+            trainingAccuracy += loss->TrainingAccuracy(output, labels);
+
+
 
             // Clean data for this batch
             delete images;
@@ -92,52 +63,44 @@ int main() {
         }
 
         // Calculate mean training metrics
-        trainingLoss /= numberOfTrainBatches;
         trainingAccuracy /= numberOfTrainBatches;
-        printf("  - [Train] Loss=%.5f\n", trainingLoss);
-        printf("  - [Train] Accuracy=%.5f%%\n", trainingAccuracy);
-        printf("  - [Train] Total Forward Time=%.5fms\n", trainingForwardTime);
-        printf("  - [Train] Total Backward Time=%.5fms\n", trainingBackwardTime);
-        printf("  - [Train] Batch Forward Time=%.5fms\n", trainingForwardTime / numberOfTrainBatches);
-        printf("  - [Train] Batch Backward Time=%.5fms\n", trainingBackwardTime / numberOfTrainBatches);
-
-        // Check model performance on test set
-        float testLoss = 0.0, testAccuracy = 0.0;
-        for (int batch = 0; batch < numberOfTestBatches; batch++) {
-            // Fetch batch from dataset
-            tensor* images = testDataset->getBatchOfImages(batch, batchSize);
-            tensor* labels = testDataset->getBatchOfLabels(batch, batchSize);
-
-            // Forward pass
-            tensor* output = model->forward(images);
-
-            // Print error
-            testLoss += loss->getLoss(output, labels);
-            testAccuracy += loss->getAccuracy(output, labels);
-
-            // Clean data for this batch
-            delete images;
-            delete labels;
-        } 
-
-        // Calculate mean testing metrics
-        testLoss /= numberOfTestBatches;
-        testAccuracy /= numberOfTestBatches;
-        printf("  - [Test] Loss=%.5f\n", testLoss);
-        printf("  - [Test] Accuracy=%.5f%%\n", testAccuracy);
-        printf("\n");
-
-        // Save times to the logger
-        logger->logEpoch(trainingLoss, trainingAccuracy,
-                         testLoss, testAccuracy,
-                         trainingForwardTime, trainingBackwardTime,
-                         trainingForwardTime / numberOfTrainBatches,
-                         trainingBackwardTime / numberOfTrainBatches);
-
-        // Shuffle both datasets before next e!
+        if (e % 10 == 0){
+            printf("Epoch %d:\n", e);
+            printf("  Train Accuracy=%.5f\n", trainingAccuracy);
+        }
         trainDataset->shuffle();
-        testDataset->shuffle();
     }
-    delete logger;
+    printf("Average Training Batch Time=%.5fms\n", trainingTime / numberOfTrainBatches/epochs);
+    float testAccuracy = 0.0;
+    float testForwardTime = 0.0;
+
+    for (int batch = 0; batch < numberOfTestBatches; batch++) {
+        // Fetch batch from dataset
+        tensor* images = testDataset->getBatchOfImages(batch, batchSize);
+        tensor* labels = testDataset->getBatchOfLabels(batch, batchSize);
+
+        // Forward pass
+        cudaEventRecord(start, 0);
+        tensor* output = model->forward(images);
+        cudaEventRecord(end, 0);
+        cudaEventSynchronize(end);
+        cudaEventSynchronize(end);
+        cudaEventElapsedTime(&elapsedTime, start, end);
+        testForwardTime += elapsedTime;
+
+        // Print error
+        testAccuracy += loss->TestAccuracy(output, labels);
+        testAccuracy /= numberOfTestBatches;
+        if (batch % 10 == 0){
+            printf("Batch %d:\n", batch);
+            printf("  Test Accuracy=%.5f\n", testAccuracy);
+            printf("\n");
+        }
+        delete images;
+        delete labels;
+        testDataset->shuffle();
+    } 
+    printf("Average Test Batch Time=%.5fms\n", testForwardTime / numberOfTestBatches);
+
     return 0;
 }

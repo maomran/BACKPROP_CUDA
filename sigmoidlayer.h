@@ -1,5 +1,5 @@
-#ifndef RELU_H
-#define RELU_H
+#ifndef SIGMOD_H
+#define SIGMOD_H
 
 #include <cstdio>
 #include <cmath>
@@ -7,7 +7,7 @@
 // #include "utils.h"
 #include "layer.h"
 
-class ReluLayer: public Layer{
+class SigmoidLayer: public Layer{
 
 public:
     int input;
@@ -16,10 +16,10 @@ public:
     tensor* inputData;
     tensor* outputForward;
     tensor* outputBackward;
-    ReluLayer(int inputOutput);
+    SigmoidLayer(int inputOutput);
 
     tensor* forward(tensor* data);
     tensor* backward(tensor* gradients);
 };
 
-#endif  /* RELU_H */
+#endif  /* SIGMOD_H */

@@ -5,7 +5,6 @@
 #include <cmath>
 
 #include "tensor.h"
-// #include "utils.h"
 #include "layer.h"
 
 class FCLayer: public Layer{

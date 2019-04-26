@@ -3,21 +3,20 @@
 
 #include <cstdio>
 #include <cmath>
-// #include "utils.h"
+#include <stdlib.h>     
 #include "tensor.h"
 
-#define VERY_SMALL_NUMBER 1e-10
 
 
-class CrossEntropyLoss {
+class LossFunction {
 private:
 
 public:
-    CrossEntropyLoss();
+    LossFunction();
 
+    float TrainingAccuracy(tensor* networkOutput, tensor* labels);
     tensor* calculate(tensor* networkOutput, tensor* labels, tensor* output);
-    float getLoss(tensor* networkOutput, tensor* labels);
-    float getAccuracy(tensor* networkOutput, tensor* labels);
+    float TestAccuracy(tensor* OutputVector, tensor* labels);
 };
 
 #endif  /* !LOSS_H */

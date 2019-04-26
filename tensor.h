@@ -2,7 +2,6 @@
 #define TENSOR_H
 
 #include <cstdio>
-// #include "utils.h"
 
 class tensor {
 public:
@@ -13,16 +12,16 @@ public:
 	tensor(int row, int col);
 	tensor(int row, int col, float *d_data);
 	tensor(int row, int col, float **h_data);
-	~tensor();
-
-    float* DevData();
+    ~tensor();
     float** Dev2Host();
     
-    void add(tensor* tensor_t);
-    void subtract(tensor* tensor_t);
-    void scale(float factor);
-    tensor* multiply(tensor* t, tensor* output);
-    tensor* avg(tensor* output);
+    void Add(tensor* input);
+    void Subtract(tensor* input);
+    void Scale(float factor);
+    tensor* MatMul(tensor* t, tensor* output);
+    tensor* GradientMul(tensor* t, tensor* output);
+    tensor* BackwardMul(tensor* t, tensor* output);
+    tensor* GradAvg(tensor* output);
     void toString();
 	
 };

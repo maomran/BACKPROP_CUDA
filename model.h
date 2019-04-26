@@ -7,17 +7,16 @@
 #include "funobj.h"
 #include "sgd.h"
 #include "tensor.h"
-// #include "utils.h"
 
-
+using namespace std;
 class Model {
 public:
     SGD* optimizer;
-    CrossEntropyLoss* funobj;
-    std::vector<Layer*> layers;
+    LossFunction* funobj;
+    vector<Layer*> layers;
     tensor* gradients;
 
-    Model(SGD* optimizer, CrossEntropyLoss* funobj);
+    Model(SGD* optimizer, LossFunction* funobj);
 
     void addLayer(Layer* layer);
     tensor* forward(tensor* input);
